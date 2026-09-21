@@ -6,10 +6,12 @@ import { supabaseAnonKeyMismatch } from "../src/infrastructure/config/assertSupa
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(root, ".env") });
 
+const isProduction = process.env.NODE_ENV === "production";
+
 function required(name: "VITE_SUPABASE_URL" | "VITE_SUPABASE_ANON_KEY"): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Falta ${name} en el archivo .env`);
+    throw new Error(`Falta la variable de entorno ${name}.`);
   }
   return value;
 }
@@ -30,15 +32,31 @@ const databaseUrl = process.env.DATABASE_URL;
 const anonKeyError = supabaseAnonKeyMismatch(supabaseUrl, supabaseAnonKey);
 
 if (!databaseUrl || !databaseUrl.startsWith("postgres")) {
-  throw new Error("Falta DATABASE_URL en .env (cadena de Postgres, sin prefijo VITE_).");
+  throw new Error("Falta DATABASE_URL (cadena de Postgres, sin prefijo VITE_).");
 }
+
+const corsOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  process.env.CORS_ORIGIN,
+  process.env.RENDER_EXTERNAL_URL,
+]
+  .flatMap((value) => (value ? value.split(",") : []))
+  .map((value) => value.trim())
+  .filter(Boolean);
 
 if (anonKeyError) {
   console.error(anonKeyError);
 }
 
 export const serverEnv = {
+  isProduction,
+  host: isProduction ? "0.0.0.0" : "127.0.0.1",
   port: Number(process.env.PORT ?? 3001),
+  rootDir: root,
+  corsOrigins,
   supabaseUrl,
   supabaseAnonKey,
   databaseUrl,

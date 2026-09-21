@@ -6,9 +6,9 @@ const app = createApp();
 let server: ReturnType<typeof app.listen> | undefined;
 
 function start(attempt = 1): void {
-  server = app.listen(serverEnv.port, "127.0.0.1", () => {
-    console.log(`AsistAI API en http://127.0.0.1:${serverEnv.port}`);
-    console.log(`Swagger UI en http://127.0.0.1:${serverEnv.port}/api/docs`);
+  server = app.listen(serverEnv.port, serverEnv.host, () => {
+    console.log(`AsistAI en http://${serverEnv.host}:${serverEnv.port}`);
+    console.log(`Swagger UI en http://${serverEnv.host}:${serverEnv.port}/api/docs`);
   });
 
   server.on("error", (error: NodeJS.ErrnoException) => {

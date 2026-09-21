@@ -9,6 +9,7 @@
     "dev:api": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "start": "tsx server/index.ts",
     "start:api": "tsx server/index.ts",
     "db:setup": "tsx scripts/setup-db.ts"
   },
@@ -24,8 +25,12 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.0",
     "swagger-ui-express": "^5.0.1",
+    "tsx": "^4.19.3",
     "zod": "^3.24.2",
     "pg": "^8.23.0"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -40,7 +45,6 @@
     "concurrently": "^9.1.2",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vite": "^6.2.2"
   }

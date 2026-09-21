@@ -1,3 +1,4 @@
+import path from "node:path";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -8,19 +9,25 @@ import { registrationsRouter } from "./routes/registrations";
 import { adminRouter } from "./routes/admin";
 import { studentsRouter } from "./routes/students";
 import { errorHandler } from "./middleware/errorHandler";
+import { serverEnv } from "./env";
 
 export function createApp() {
   const app = express();
+  const distDir = path.join(serverEnv.rootDir, "dist");
+  const supabaseWs = serverEnv.supabaseUrl.replace(/^https:/, "wss:");
 
   app.disable("x-powered-by");
+  app.set("trust proxy", 1);
+
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          connectSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", "data:"],
+          connectSrc: ["'self'", serverEnv.supabaseUrl, supabaseWs],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "https://images.unsplash.com"],
           scriptSrc: ["'self'", "'unsafe-inline'"],
         },
       },
@@ -28,12 +35,7 @@ export function createApp() {
   );
   app.use(
     cors({
-      origin: [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-      ],
+      origin: serverEnv.corsOrigins,
     }),
   );
   app.use(express.json({ limit: "10kb" }));
@@ -48,10 +50,6 @@ export function createApp() {
     }),
   );
 
-  app.get("/", (_req, res) => {
-    res.redirect(302, "http://localhost:5173");
-  });
-
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok" });
   });
@@ -60,6 +58,26 @@ export function createApp() {
   app.use("/api/registrations", registrationsRouter);
   app.use("/api/students", studentsRouter);
   app.use("/api/admin", adminRouter);
+
+  if (serverEnv.isProduction) {
+    app.use(express.static(distDir));
+    app.use((req, res, next) => {
+      if (req.path.startsWith("/api")) {
+        next();
+        return;
+      }
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        next();
+        return;
+      }
+      res.sendFile(path.join(distDir, "index.html"));
+    });
+  } else {
+    app.get("/", (_req, res) => {
+      res.redirect(302, "http://localhost:5173");
+    });
+  }
+
   app.use(errorHandler);
 
   return app;
